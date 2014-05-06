@@ -266,34 +266,8 @@ function generate_navlinks()
 	if ($pun_config['o_rules'] == '1')
 		$links[] = '<li id="navrules"><a href="misc.php?action=rules">'.$lang_common['Rules'].'</a>';
 
-	if ($pun_user['is_guest'])
-	{
-		if ($pun_user['g_search'] == '1')
-			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-
-		$links[] = '<li id="navregister"><a href="register.php">'.$lang_common['Register'].'</a>';
-		$links[] = '<li id="navlogin"><a href="login.php">'.$lang_common['Login'].'</a>';
-
-		$info = $lang_common['Not logged in'];
-	}
-	else
-	{
-		if ($pun_user['g_id'] > PUN_MOD)
-		{
-			if ($pun_user['g_search'] == '1')
-				$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-
-			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
-			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
-		}
-		else
-		{
-			$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
-			$links[] = '<li id="navprofile"><a href="profile.php?id='.$pun_user['id'].'">'.$lang_common['Profile'].'</a>';
-			$links[] = '<li id="navadmin"><a href="admin_index.php">'.$lang_common['Admin'].'</a>';
-			$links[] = '<li id="navlogout"><a href="login.php?action=out&amp;id='.$pun_user['id'].'&amp;csrf_token='.pun_hash($pun_user['id'].pun_hash(get_remote_address())).'">'.$lang_common['Logout'].'</a>';
-		}
-	}
+	if ($pun_user['g_search'] == '1')
+		$links[] = '<li id="navsearch"><a href="search.php">'.$lang_common['Search'].'</a>';
 
 	// Are there any additional navlinks we should insert into the array before imploding it?
 	if ($pun_config['o_additional_navlinks'] != '')
