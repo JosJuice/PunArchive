@@ -138,27 +138,6 @@ function set_default_user()
 
 	$pun_user = $db->fetch_assoc($result);
 
-	// Update online list
-	if (!$pun_user['logged'])
-	{
-		$pun_user['logged'] = time();
-
-		// With MySQL/MySQLi, REPLACE INTO avoids a user having two rows in the online table
-		switch ($db_type)
-		{
-			case 'mysql':
-			case 'mysqli':
-				$db->query('REPLACE INTO '.$db->prefix.'online (user_id, ident, logged) VALUES(1, \''.$db->escape($remote_addr).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
-				break;
-
-			default:
-				$db->query('INSERT INTO '.$db->prefix.'online (user_id, ident, logged) VALUES(1, \''.$db->escape($remote_addr).'\', '.$pun_user['logged'].')') or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
-				break;
-		}
-	}
-	else
-		$db->query('UPDATE '.$db->prefix.'online SET logged='.time().' WHERE ident=\''.$db->escape($remote_addr).'\'') or error('Unable to update online list', __FILE__, __LINE__, $db->error());
-
 	$pun_user['disp_topics'] = $pun_config['o_disp_topics_default'];
 	$pun_user['disp_posts'] = $pun_config['o_disp_posts_default'];
 	$pun_user['timezone'] = $pun_config['o_default_timezone'];
