@@ -1057,16 +1057,7 @@ function forum_is_new($forum_id, $last_post_time)
 //
 function topic_is_new($topic_id, $forum_id, $last_post_time)
 {
-	global $pun_user;
-
-	if ($pun_user['last_visit'] >= $last_post_time)
-		return false;
-	else if (!empty($pun_user['read_topics']['f'][$forum_id]) && $pun_user['read_topics']['f'][$forum_id] >= $last_post_time)
-		return false;
-	else if (!empty($pun_user['read_topics']['t'][$topic_id]) && $pun_user['read_topics']['t'][$topic_id] >= $last_post_time)
-		return false;
-	else
-		return true;
+	return false;
 }
 
 
