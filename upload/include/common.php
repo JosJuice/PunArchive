@@ -118,9 +118,9 @@ if (!defined('PUN_DISABLE_BUFFERING'))
 }
 
 
-// Check/update/set cookie and fetch user info
+// Fetch user info
 $pun_user = array();
-check_cookie($pun_user);
+set_default_user($pun_user);
 
 // Make sure server timezone setting is correct
 check_server_timezone();
