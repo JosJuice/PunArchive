@@ -1,3 +1,7 @@
 nbproject/
 upload/config.php
 upload/cache/
+!upload/cache/.htaccess
+!upload/cache/index.html
+upload/img/avatars/
+!upload/img/avatars/index.html
