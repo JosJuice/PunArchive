@@ -1047,39 +1047,8 @@ function get_all_new_topics()
 // Determine whether forum has any new posts
 //
 function forum_is_new($forum_id, $last_post_time)
-{ // This function scares me but I believe all the logic is good. Have fun :)
-
-	global $pun_user, $new_topics;
-
-	// Were there no posts since the user's last visit?
-	if ($pun_user['last_visit'] >= $last_post_time)
-		return false;
-	// Has the user marked all topics in the forum as read since the last post?
-	else if (!empty($pun_user['read_topics']['f'][$forum_id]) && $pun_user['read_topics']['f'][$forum_id] >= $last_post_time)
-		return false;
-	// Is it even possible that any of the new posts could be read?
-	else if (empty($pun_user['read_topics']['t']) && empty($pun_user['read_topics']['f']))
-		return true;
-	else
-	{
-		if (is_array($new_topics[$forum_id]))
-		{
-			// Now we must loop through all the "unread" topics in the forum and see if the user has read them
-			foreach($new_topics[$forum_id] as $topic_id => $last_post)
-			{
-				if ( // I'll be nice and explain this one for you. if:
-					(empty($pun_user['read_topics']['f'][$forum_id]) || // the user hasn't marked the forum as read, or
-					$pun_user['read_topics']['f'][$forum_id] < $last_post) && // they have but the topic has been posted in since, and
-					(empty($pun_user['read_topics']['t'][$topic_id]) || // the user hasn't marked the topic as read, or
-					$pun_user['read_topics']['t'][$topic_id] < $last_post) // they have but the topic has been posted in since, then
-				)
-					return true; // the topic must be new
-			}
-		}
-		// Well, since every topic was marked as read, then the forum must not have any new posts
-		else
-			return false;
-	}
+{
+	return false;
 }
 
 
