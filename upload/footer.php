@@ -106,7 +106,7 @@ else if ($footer_style == 'viewforum' || $footer_style == 'viewtopic')
 }
 
 ?>
-			<p class="conr">Powered by <a href="http://www.punbb.org/">PunBB</a><?php if ($pun_config['o_show_version'] == '1') echo ' '.$pun_config['o_cur_version']; ?></p>
+			<p class="conr">Powered by PunArchive (based on <a href="http://www.punbb.org/">PunBB</a>)<?php if ($pun_config['o_show_version'] == '1') echo ' '.$pun_config['o_cur_version']; ?></p>
 <?php
 
 // Display debug info (if enabled/defined)
