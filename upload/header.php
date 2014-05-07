@@ -179,32 +179,7 @@ $tpl_main = str_replace('<pun_navlinks>','<div id="brdmenu" class="inbox">'."\n\
 
 
 // START SUBST - <pun_status>
-if ($pun_user['is_guest'])
-	$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<p>'.$lang_common['Not logged in'].'</p>'."\n\t\t".'</div>';
-else
-{
-	$tpl_temp = '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<ul class="conl">'."\n\t\t\t\t".'<li>'.$lang_common['Logged in as'].' <strong>'.pun_htmlspecialchars($pun_user['username']).'</strong></li>'."\n\t\t\t\t".'<li>'.$lang_common['Last visit'].': '.format_time($pun_user['last_visit']).'</li>';
-
-	if ($pun_user['g_id'] < PUN_GUEST)
-	{
-		$result_header = $db->query('SELECT COUNT(id) FROM '.$db->prefix.'reports WHERE zapped IS NULL') or error('Unable to fetch reports info', __FILE__, __LINE__, $db->error());
-
-		if ($db->result($result_header))
-			$tpl_temp .= "\n\t\t\t\t".'<li class="reportlink"><strong><a href="admin_reports.php">There are new reports</a></strong></li>';
-
-		if ($pun_config['o_maintenance'] == '1')
-			$tpl_temp .= "\n\t\t\t\t".'<li class="maintenancelink"><strong><a href="admin_options.php#maintenance">Maintenance mode is enabled!</a></strong></li>';
-	}
-
-	if (in_array(basename($_SERVER['PHP_SELF']), array('index.php', 'search.php')))
-		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'."\n\t\t\t\t".'<li><a href="search.php?action=show_new">'.$lang_common['Show new posts'].'</a></li>'."\n\t\t\t\t".'<li><a href="misc.php?action=markread">'.$lang_common['Mark all as read'].'</a></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
-	else if (basename($_SERVER['PHP_SELF']) == 'viewforum.php')
-		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<ul class="conr">'."\n\t\t\t\t".'<li><a href="misc.php?action=markforumread&amp;id='.$id.'">'.$lang_common['Mark forum as read'].'</a></li>'."\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
-	else
-		$tpl_temp .= "\n\t\t\t".'</ul>'."\n\t\t\t".'<div class="clearer"></div>'."\n\t\t".'</div>';
-}
-
-$tpl_main = str_replace('<pun_status>', $tpl_temp, $tpl_main);
+$tpl_main = str_replace('<pun_status>', '', $tpl_main);
 // END SUBST - <pun_status>
 
 
