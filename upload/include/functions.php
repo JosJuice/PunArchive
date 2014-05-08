@@ -105,37 +105,6 @@ function check_bans()
 
 
 //
-// Update "Users online"
-//
-function update_users_online()
-{
-	global $db, $pun_config, $pun_user;
-
-	$now = time();
-
-	// Fetch all online list entries that are older than "o_timeout_online"
-	$result = $db->query('SELECT * FROM '.$db->prefix.'online WHERE logged<'.($now-$pun_config['o_timeout_online'])) or error('Unable to fetch old entries from online list', __FILE__, __LINE__, $db->error());
-	while ($cur_user = $db->fetch_assoc($result))
-	{
-		// If the entry is a guest, delete it
-		if ($cur_user['user_id'] == '1')
-			$db->query('DELETE FROM '.$db->prefix.'online WHERE ident=\''.$db->escape($cur_user['ident']).'\'') or error('Unable to delete from online list', __FILE__, __LINE__, $db->error());
-		else
-		{
-			// If the entry is older than "o_timeout_visit", update last_visit for the user in question, then delete him/her from the online list
-			if ($cur_user['logged'] < ($now-$pun_config['o_timeout_visit']))
-			{
-				$db->query('UPDATE '.$db->prefix.'users SET last_visit='.$cur_user['logged'].', read_topics=NULL WHERE id='.$cur_user['user_id']) or error('Unable to update user visit data', __FILE__, __LINE__, $db->error());
-				$db->query('DELETE FROM '.$db->prefix.'online WHERE user_id='.$cur_user['user_id']) or error('Unable to delete from online list', __FILE__, __LINE__, $db->error());
-			}
-			else if ($cur_user['idle'] == '0')
-				$db->query('UPDATE '.$db->prefix.'online SET idle=1 WHERE user_id='.$cur_user['user_id']) or error('Unable to insert into online list', __FILE__, __LINE__, $db->error());
-		}
-	}
-}
-
-
-//
 // Generate the "navigator" that appears at the top of every page
 //
 function generate_navlinks()
