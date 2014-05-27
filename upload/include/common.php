@@ -76,10 +76,6 @@ if (get_magic_quotes_gpc())
 if (version_compare(PHP_VERSION, '4.2.0', '<'))
 	mt_srand((double)microtime()*1000000);
 
-// If a cookie name is not specified in config.php, we use the default (punbb_cookie)
-if (empty($cookie_name))
-	$cookie_name = 'punbb_cookie';
-
 // Define a few commonly used constants
 define('PUN_UNVERIFIED', 32000);
 define('PUN_ADMIN', 1);
