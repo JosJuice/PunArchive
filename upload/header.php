@@ -179,32 +179,15 @@ $tpl_main = str_replace('<pun_navlinks>','<div id="brdmenu" class="inbox">'."\n\
 
 
 // START SUBST - <pun_status>
-$tpl_main = str_replace('<pun_status>', '', $tpl_main);
+if ($pun_config['o_announcement'] == '1')
+	$tpl_main = str_replace('<pun_status>', '<div id="brdwelcome" class="inbox">'."\n\t\t\t".'<p>'.$pun_config['o_announcement_message'].'</p>'."\n\t\t".'</div>', $tpl_main);
+else
+	$tpl_main = str_replace('<pun_status>', '', $tpl_main);
 // END SUBST - <pun_status>
 
 
 // START SUBST - <pun_announcement>
-if ($pun_config['o_announcement'] == '1')
-{
-	ob_start();
-
-?>
-<div id="announce" class="block">
-	<h2><span><?php echo $lang_common['Announcement'] ?></span></h2>
-	<div class="box">
-		<div class="inbox">
-			<div><?php echo $pun_config['o_announcement_message'] ?></div>
-		</div>
-	</div>
-</div>
-<?php
-
-	$tpl_temp = trim(ob_get_contents());
-	$tpl_main = str_replace('<pun_announcement>', $tpl_temp, $tpl_main);
-	ob_end_clean();
-}
-else
-	$tpl_main = str_replace('<pun_announcement>', '', $tpl_main);
+$tpl_main = str_replace('<pun_announcement>', '', $tpl_main);
 // END SUBST - <pun_announcement>
 
 
