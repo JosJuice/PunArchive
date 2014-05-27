@@ -39,7 +39,7 @@ require PUN_ROOT.'lang/'.$pun_user['language'].'/search.php';
 
 
 // Determine if we are allowed to view post counts
-$show_post_count = ($pun_config['o_show_post_count'] == '1' || $pun_user['g_id'] < PUN_GUEST) ? true : false;
+$show_post_count = ($pun_config['o_show_post_count'] == '1') ? true : false;
 
 $username = (isset($_GET['username']) && $pun_user['g_search_users'] == '1') ? pun_trim($_GET['username']) : '';
 $show_group = (!isset($_GET['show_group'])) ? -1 : intval($_GET['show_group']);
