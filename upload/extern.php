@@ -266,41 +266,6 @@ if ($_GET['action'] == 'active' || $_GET['action'] == 'new')
 
 
 //
-// Show users online
-//
-else if ($_GET['action'] == 'online' || $_GET['action'] == 'online_full')
-{
-	// Load the index.php language file
-	require PUN_ROOT.'lang/'.$pun_config['o_default_lang'].'/index.php';
-	
-	// Fetch users online info and generate strings for output
-	$num_guests = $num_users = 0;
-	$users = array();
-	$result = $db->query('SELECT user_id, ident FROM '.$db->prefix.'online WHERE idle=0 ORDER BY ident', true) or error('Unable to fetch online list', __FILE__, __LINE__, $db->error());
-
-	while ($pun_user_online = $db->fetch_assoc($result))
-	{
-		if ($pun_user_online['user_id'] > 1)
-		{
-			$users[] = '<a href="'.$pun_config['o_base_url'].'/profile.php?id='.$pun_user_online['user_id'].'">'.pun_htmlspecialchars($pun_user_online['ident']).'</a>';
-			++$num_users;
-		}
-		else
-			++$num_guests;
-	}
-
-	echo $lang_index['Guests online'].': '.$num_guests.'<br />';
-
-	if ($_GET['action'] == 'online_full')
-		echo $lang_index['Users online'].': '.implode(', ', $users).'<br />';
-	else
-		echo $lang_index['Users online'].': '.$num_users.'<br />';
-
-	return;
-}
-
-
-//
 // Show board statistics
 //
 else if ($_GET['action'] == 'stats')
