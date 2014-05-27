@@ -31,14 +31,7 @@ if (!defined('PUN'))
 header('Content-type: text/html; charset='.$lang_common['lang_encoding']);
 
 // Load the template
-if (defined('PUN_ADMIN_CONSOLE'))
-{
-	if (file_exists(PUN_ROOT.'include/template/'.$pun_user['style'].'/admin.tpl'))
-		$tpl_main = file_get_contents(PUN_ROOT.'include/template/'.$pun_user['style'].'/admin.tpl');
-	else
-		$tpl_main = file_get_contents(PUN_ROOT.'include/template/admin.tpl');
-}
-else if (defined('PUN_HELP'))
+if (defined('PUN_HELP'))
 {
 	if (file_exists(PUN_ROOT.'include/template/'.$pun_user['style'].'/help.tpl'))
 		$tpl_main = file_get_contents(PUN_ROOT.'include/template/'.$pun_user['style'].'/help.tpl');
@@ -92,9 +85,6 @@ if (!defined('PUN_ALLOW_INDEX'))
 <title><?php echo $page_title ?></title>
 <link rel="stylesheet" type="text/css" href="style/<?php echo $pun_user['style'].'.css' ?>" />
 <?php
-
-if (defined('PUN_ADMIN_CONSOLE'))
-	echo '<link rel="stylesheet" type="text/css" href="style/imports/base_admin.css" />'."\n";
 
 if (isset($required_fields))
 {
