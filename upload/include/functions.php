@@ -575,28 +575,6 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 }
 
 
-//
-// Check if the server timezone setting in the board config is still set correctly (if it isn't, update it)
-//
-function check_server_timezone()
-{
-	global $db, $pun_config;
-
-	// Determine the server timezone offset in hours
-	$server_timezone = date('Z') / 3600;
-
-	// If the server timezone has changed
-	if ($pun_config['o_server_timezone'] != $server_timezone)
-	{
-		$db->query('UPDATE '.$db->prefix.'config SET conf_value=\''.$db->escape($server_timezone).'\' WHERE conf_name=\'o_server_timezone\'') or error('Unable to update server timezone in board config', __FILE__, __LINE__, $db->error());
-
-		// Regenerate the config cache
-		require_once PUN_ROOT.'include/cache.php';
-		generate_config_cache();
-	}
-}
-
-
 // DEBUG FUNCTIONS BELOW
 
 //

@@ -118,9 +118,6 @@ if (!defined('PUN_DISABLE_BUFFERING'))
 $pun_user = array();
 set_default_user($pun_user);
 
-// Make sure server timezone setting is correct
-check_server_timezone();
-
 // Attempt to load the common language file
 @include PUN_ROOT.'lang/'.$pun_user['language'].'/common.php';
 if (!isset($lang_common))
