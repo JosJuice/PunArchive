@@ -52,18 +52,10 @@ if ($cur_forum['redirect_url'] != '')
 	exit;
 }
 
-// Sort out who the moderators are and if we are currently a moderator (or an admin)
+// Sort out who the moderators are
 $mods_array = array();
 if ($cur_forum['moderators'] != '')
 	$mods_array = unserialize($cur_forum['moderators']);
-
-$is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_id'] == PUN_MOD && array_key_exists($pun_user['username'], $mods_array))) ? true : false;
-
-// Can we or can we not post new topics?
-if (($cur_forum['post_topics'] == '' && $pun_user['g_post_topics'] == '1') || $cur_forum['post_topics'] == '1' || $is_admmod)
-	$post_link = "\t\t".'<p class="postlink conr"><a href="post.php?fid='.$id.'">'.$lang_forum['Post topic'].'</a></p>'."\n";
-else
-	$post_link = '';
 
 
 // Determine the topic offset (based on $_GET['p'])
@@ -84,7 +76,6 @@ require PUN_ROOT.'header.php';
 <div class="linkst">
 	<div class="inbox">
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-<?php echo $post_link ?>
 		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a>&nbsp;</li><li>&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></li></ul>
 		<div class="clearer"></div>
 	</div>
@@ -107,33 +98,7 @@ require PUN_ROOT.'header.php';
 <?php
 
 // Fetch list of topics to display on this page
-if ($pun_user['is_guest'] || $pun_config['o_show_dot'] == '0')
-{
-	// Without "the dot"
-	$sql = 'SELECT id, poster, subject, posted, last_post, last_post_id, last_poster, num_views, num_replies, closed, sticky, moved_to FROM '.$db->prefix.'topics WHERE forum_id='.$id.' ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics'];
-}
-else
-{
-	// With "the dot"
-	switch ($db_type)
-	{
-		case 'mysql':
-		case 'mysqli':
-			$sql = 'SELECT p.poster_id AS has_posted, t.id, t.subject, t.poster, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to FROM '.$db->prefix.'topics AS t LEFT JOIN '.$db->prefix.'posts AS p ON t.id=p.topic_id AND p.poster_id='.$pun_user['id'].' WHERE t.forum_id='.$id.' GROUP BY t.id ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics'];
-			break;
-
-		case 'sqlite':
-			$sql = 'SELECT p.poster_id AS has_posted, t.id, t.subject, t.poster, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to FROM '.$db->prefix.'topics AS t LEFT JOIN '.$db->prefix.'posts AS p ON t.id=p.topic_id AND p.poster_id='.$pun_user['id'].' WHERE t.id IN(SELECT id FROM '.$db->prefix.'topics WHERE forum_id='.$id.' ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics'].') GROUP BY t.id ORDER BY t.sticky DESC, t.last_post DESC';
-			break;
-
-		default:
-			$sql = 'SELECT p.poster_id AS has_posted, t.id, t.subject, t.poster, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to FROM '.$db->prefix.'topics AS t LEFT JOIN '.$db->prefix.'posts AS p ON t.id=p.topic_id AND p.poster_id='.$pun_user['id'].' WHERE t.forum_id='.$id.' GROUP BY t.id, t.subject, t.poster, t.posted, t.last_post, t.last_post_id, t.last_poster, t.num_views, t.num_replies, t.closed, t.sticky, t.moved_to, p.poster_id ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics'];
-			break;
-
-	}
-}
-
-$result = $db->query($sql) or error('Unable to fetch topic list', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT id, poster, subject, posted, last_post, last_post_id, last_poster, num_views, num_replies, closed, sticky, moved_to FROM '.$db->prefix.'topics WHERE forum_id='.$id.' ORDER BY sticky DESC, '.(($cur_forum['sort_by'] == '1') ? 'posted' : 'last_post').' DESC LIMIT '.$start_from.', '.$pun_user['disp_topics']) or error('Unable to fetch topic list', __FILE__, __LINE__, $db->error());
 
 // If there are topics in this forum.
 if ($db->num_rows($result))
@@ -163,26 +128,6 @@ if ($db->num_rows($result))
 			$item_status = 'iclosed';
 		}
 
-		if (!$pun_user['is_guest'] && topic_is_new($cur_topic['id'], $id,  $cur_topic['last_post']) && $cur_topic['moved_to'] == null)
-		{
-			$icon_text .= ' '.$lang_common['New icon'];
-			$item_status .= ' inew';
-			$icon_type = 'icon inew';
-			$subject = '<strong>'.$subject.'</strong>';
-			$subject_new_posts = '<span class="newtext">[&nbsp;<a href="viewtopic.php?id='.$cur_topic['id'].'&amp;action=new" title="'.$lang_common['New posts info'].'">'.$lang_common['New posts'].'</a>&nbsp;]</span>';
-		}
-		else
-			$subject_new_posts = null;
-
-		// Should we display the dot or not? :)
-		if (!$pun_user['is_guest'] && $pun_config['o_show_dot'] == '1')
-		{
-			if ($cur_topic['has_posted'] == $pun_user['id'])
-				$subject = '<strong>&middot;</strong>&nbsp;'.$subject;
-			else
-				$subject = '&nbsp;&nbsp;'.$subject;
-		}
-
 		if ($cur_topic['sticky'] == '1')
 		{
 			$subject = '<span class="stickytext">'.$lang_forum['Sticky'].': </span>'.$subject;
@@ -193,16 +138,7 @@ if ($db->num_rows($result))
 		$num_pages_topic = ceil(($cur_topic['num_replies'] + 1) / $pun_user['disp_posts']);
 
 		if ($num_pages_topic > 1)
-			$subject_multipage = '[ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$cur_topic['id']).' ]';
-		else
-			$subject_multipage = null;
-
-		// Should we show the "New posts" and/or the multipage links?
-		if (!empty($subject_new_posts) || !empty($subject_multipage))
-		{
-			$subject .= '&nbsp; '.(!empty($subject_new_posts) ? $subject_new_posts : '');
-			$subject .= !empty($subject_multipage) ? ' '.$subject_multipage : '';
-		}
+			$subject .= '&nbsp;  [ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$cur_topic['id']).' ]';
 
 ?>
 				<tr<?php if ($item_status != '') echo ' class="'.trim($item_status).'"'; ?>>
@@ -243,7 +179,6 @@ else
 <div class="linksb">
 	<div class="inbox">
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
-<?php echo $post_link ?>
 		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a>&nbsp;</li><li>&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_forum['forum_name']) ?></li></ul>
 		<div class="clearer"></div>
 	</div>
