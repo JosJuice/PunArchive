@@ -57,14 +57,18 @@ function check_bans()
 	// Add a dot at the end of the IP address to prevent banned address 192.168.0.5 from matching e.g. 192.168.0.50
 	$user_ip = get_remote_address().'.';
 	$bans_altered = false;
+	$update_failed = false;
 
 	foreach ($pun_bans as $cur_ban)
 	{
 		// Has this ban expired?
 		if ($cur_ban['expire'] != '' && $cur_ban['expire'] <= time())
 		{
-			$db->query('DELETE FROM '.$db->prefix.'bans WHERE id='.$cur_ban['id']) or error('Unable to delete expired ban', __FILE__, __LINE__, $db->error());
-			$bans_altered = true;
+			if ($db->query('DELETE FROM '.$db->prefix.'bans WHERE id='.$cur_ban['id']))
+				$bans_altered = true;
+			else
+				$update_failed = true;
+			
 			continue;
 		}
 
@@ -83,7 +87,7 @@ function check_bans()
 	}
 
 	// If we removed any expired bans during our run-through, we need to regenerate the bans cache
-	if ($bans_altered)
+	if ($bans_altered && !$update_failed)
 	{
 		require_once PUN_ROOT.'include/cache.php';
 		generate_bans_cache();
