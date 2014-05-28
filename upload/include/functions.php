@@ -54,10 +54,6 @@ function check_bans()
 {
 	global $db, $pun_config, $lang_common, $pun_user, $pun_bans;
 
-	// Admins aren't affected
-	if ($pun_user['g_id'] == PUN_ADMIN || !$pun_bans)
-		return;
-
 	// Add a dot at the end of the IP address to prevent banned address 192.168.0.5 from matching e.g. 192.168.0.50
 	$user_ip = get_remote_address().'.';
 	$bans_altered = false;
@@ -72,12 +68,6 @@ function check_bans()
 			continue;
 		}
 
-		if ($cur_ban['username'] != '' && !strcasecmp($pun_user['username'], $cur_ban['username']))
-		{
-			$db->query('DELETE FROM '.$db->prefix.'online WHERE ident=\''.$db->escape($pun_user['username']).'\'') or error('Unable to delete from online list', __FILE__, __LINE__, $db->error());
-			message($lang_common['Ban message'].' '.(($cur_ban['expire'] != '') ? $lang_common['Ban message 2'].' '.strtolower(format_time($cur_ban['expire'], true)).'. ' : '').(($cur_ban['message'] != '') ? $lang_common['Ban message 3'].'<br /><br /><strong>'.pun_htmlspecialchars($cur_ban['message']).'</strong><br /><br />' : '<br /><br />').$lang_common['Ban message 4'].' <a href="mailto:'.$pun_config['o_admin_email'].'">'.$pun_config['o_admin_email'].'</a>.', true);
-		}
-
 		if ($cur_ban['ip'] != '')
 		{
 			$cur_ban_ips = explode(' ', $cur_ban['ip']);
@@ -87,10 +77,7 @@ function check_bans()
 				$cur_ban_ips[$i] = $cur_ban_ips[$i].'.';
 
 				if (substr($user_ip, 0, strlen($cur_ban_ips[$i])) == $cur_ban_ips[$i])
-				{
-					$db->query('DELETE FROM '.$db->prefix.'online WHERE ident=\''.$db->escape($pun_user['username']).'\'') or error('Unable to delete from online list', __FILE__, __LINE__, $db->error());
 					message($lang_common['Ban message'].' '.(($cur_ban['expire'] != '') ? $lang_common['Ban message 2'].' '.strtolower(format_time($cur_ban['expire'], true)).'. ' : '').(($cur_ban['message'] != '') ? $lang_common['Ban message 3'].'<br /><br /><strong>'.pun_htmlspecialchars($cur_ban['message']).'</strong><br /><br />' : '<br /><br />').$lang_common['Ban message 4'].' <a href="mailto:'.$pun_config['o_admin_email'].'">'.$pun_config['o_admin_email'].'</a>.', true);
-				}
 			}
 		}
 	}
@@ -585,40 +572,6 @@ H2 {MARGIN: 0; COLOR: #FFFFFF; BACKGROUND-COLOR: #B84623; FONT-SIZE: 1.1em; PADD
 
 
 //
-// Fetch all new topics since last visit
-//
-function get_all_new_topics()
-{
-	global $db, $pun_user;
-
-	$new_topics = array();
-	$result = $db->query('SELECT forum_id, id, last_post FROM '.$db->prefix.'topics WHERE last_post>'. $pun_user['last_visit'] .' AND moved_to IS NULL ORDER BY last_post DESC') or error('Unable to fetch new topics from forum', __FILE__, __LINE__, $db->error());
-	while($new_topics_row = $db->fetch_assoc($result))
-		$new_topics[$new_topics_row['forum_id']][$new_topics_row['id']] = $new_topics_row['last_post'];
-
-	return $new_topics;
-}
-
-
-//
-// Determine whether forum has any new posts
-//
-function forum_is_new($forum_id, $last_post_time)
-{
-	return false;
-}
-
-
-//
-// Determine whether it is a new topic
-//
-function topic_is_new($topic_id, $forum_id, $last_post_time)
-{
-	return false;
-}
-
-
-//
 // Check if the server timezone setting in the board config is still set correctly (if it isn't, update it)
 //
 function check_server_timezone()
@@ -637,34 +590,6 @@ function check_server_timezone()
 		require_once PUN_ROOT.'include/cache.php';
 		generate_config_cache();
 	}
-}
-
-
-//
-// Check whether a file/folder is writable
-// This function also works on Windows Server where ACLs seem to be ignored
-//
-function forum_is_writable($path)
-{
-	if (is_dir($path))
-	{
-		$path = rtrim($path, '/').'/';
-		return forum_is_writable($path.uniqid(mt_rand()).'.tmp');
-	}
-
-	// Check temporary file for read/write capabilities
-	$rm = file_exists($path);
-	$f = @fopen($path, 'a');
-
-	if ($f === false)
-		return false;
-
-	fclose($f);
-
-	if (!$rm)
-		@unlink($path);
-
-	return true;
 }
 
 
