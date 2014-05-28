@@ -52,12 +52,6 @@ if ($cur_forum['redirect_url'] != '')
 	exit;
 }
 
-// Sort out who the moderators are
-$mods_array = array();
-if ($cur_forum['moderators'] != '')
-	$mods_array = unserialize($cur_forum['moderators']);
-
-
 // Determine the topic offset (based on $_GET['p'])
 $num_pages = ceil($cur_forum['num_topics'] / $pun_user['disp_topics']);
 

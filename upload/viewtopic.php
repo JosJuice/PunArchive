@@ -65,28 +65,8 @@ if ($pid)
 	$_GET['p'] = ceil($i / $pun_user['disp_posts']);
 }
 
-// If action=new, we redirect to the first new post (if any)
-else if ($action == 'new' && !$pun_user['is_guest'])
-{
-	// If the user has read the topic
-	if (!empty($pun_user['read_topics']['t'][$id]))
-		$last_read = $pun_user['read_topics']['t'][$id];
-	else
-		$last_read = $pun_user['last_visit'];
-
-	$result = $db->query('SELECT MIN(id) FROM '.$db->prefix.'posts WHERE topic_id='.$id.' AND posted>'.$last_read) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
-	$first_new_post_id = $db->result($result);
-
-	if ($first_new_post_id)
-		header('Location: viewtopic.php?pid='.$first_new_post_id.'#p'.$first_new_post_id);
-	else	// If there is no new post, we go to the last post
-		header('Location: viewtopic.php?id='.$id.'&action=last');
-
-	exit;
-}
-
-// If action=last, we redirect to the last post
-else if ($action == 'last')
+// If action=new or action=last, we redirect to the last post
+if ($action == 'new' || $action == 'last')
 {
 	$result = $db->query('SELECT MAX(id) FROM '.$db->prefix.'posts WHERE topic_id='.$id) or error('Unable to fetch post info', __FILE__, __LINE__, $db->error());
 	$last_post_id = $db->result($result);
@@ -100,38 +80,17 @@ else if ($action == 'last')
 
 
 // Fetch some info about the topic
-if (!$pun_user['is_guest'])
-	$result = $db->query('SELECT t.subject, t.closed, t.num_replies, t.sticky, t.last_post, f.id AS forum_id, f.forum_name, f.moderators, fp.post_replies, s.user_id AS is_subscribed FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'subscriptions AS s ON (t.id=s.topic_id AND s.user_id='.$pun_user['id'].') LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$id.' AND t.moved_to IS NULL') or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
-else
-	$result = $db->query('SELECT t.subject, t.closed, t.num_replies, t.sticky, f.id AS forum_id, f.forum_name, f.moderators, fp.post_replies, 0 FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$id.' AND t.moved_to IS NULL') or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
+$result = $db->query('SELECT t.subject, t.closed, t.num_replies, t.sticky, f.id AS forum_id, f.forum_name, f.moderators, fp.post_replies, 0 FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.id='.$id.' AND t.moved_to IS NULL') or error('Unable to fetch topic info', __FILE__, __LINE__, $db->error());
 
 if (!$db->num_rows($result))
 	message($lang_common['Bad request']);
 
 $cur_topic = $db->fetch_assoc($result);
 
-// Mark the topic as read
-if (!$pun_user['is_guest']) mark_topic_read($id, $cur_topic['forum_id'], $cur_topic['last_post']);
-
-// Sort out who the moderators are and if we are currently a moderator (or an admin)
-$mods_array = ($cur_topic['moderators'] != '') ? unserialize($cur_topic['moderators']) : array();
-$is_admmod = ($pun_user['g_id'] == PUN_ADMIN || ($pun_user['g_id'] == PUN_MOD && array_key_exists($pun_user['username'], $mods_array))) ? true : false;
-
-// Can we or can we not post replies?
 if ($cur_topic['closed'] == '0')
-{
-	if (($cur_topic['post_replies'] == '' && $pun_user['g_post_replies'] == '1') || $cur_topic['post_replies'] == '1' || $is_admmod)
-		$post_link = '<a href="post.php?tid='.$id.'">'.$lang_topic['Post reply'].'</a>';
-	else
-		$post_link = '&nbsp;';
-}
+	$post_link = '&nbsp;';
 else
-{
 	$post_link = $lang_topic['Topic closed'];
-
-	if ($is_admmod)
-		$post_link .= ' / <a href="post.php?tid='.$id.'">'.$lang_topic['Post reply'].'</a>';
-}
 
 
 // Determine the post offset (based on $_GET['p'])
@@ -146,28 +105,6 @@ $paging_links = $lang_common['Pages'].': '.paginate($num_pages, $p, 'viewtopic.p
 
 if ($pun_config['o_censoring'] == '1')
 	$cur_topic['subject'] = censor_words($cur_topic['subject']);
-
-
-$quickpost = false;
-if ($pun_config['o_quickpost'] == '1' &&
-	!$pun_user['is_guest'] &&
-	($cur_topic['post_replies'] == '1' || ($cur_topic['post_replies'] == '' && $pun_user['g_post_replies'] == '1')) &&
-	($cur_topic['closed'] == '0' || $is_admmod))
-{
-	$required_fields = array('req_message' => $lang_common['Message']);
-	$quickpost = true;
-}
-
-if (!$pun_user['is_guest'] && $pun_config['o_subscriptions'] == '1')
-{
-	if ($cur_topic['is_subscribed'])
-		// I apologize for the variable naming here. It's a mix of subscription and action I guess :-)
-		$subscraction = '<p class="subscribelink clearb">'.$lang_topic['Is subscribed'].' - <a href="misc.php?unsubscribe='.$id.'">'.$lang_topic['Unsubscribe'].'</a></p>'."\n";
-	else
-		$subscraction = '<p class="subscribelink clearb"><a href="misc.php?subscribe='.$id.'">'.$lang_topic['Subscribe'].'</a></p>'."\n";
-}
-else
-	$subscraction = '<div class="clearer"></div>'."\n";
 
 $page_title = pun_htmlspecialchars($pun_config['o_board_title'].' / '.$cur_topic['subject']);
 define('PUN_ALLOW_INDEX', 1);
@@ -206,7 +143,6 @@ while ($cur_post = $db->fetch_assoc($result))
 	$user_info = array();
 	$user_contacts = array();
 	$post_actions = array();
-	$is_online = '';
 	$signature = '';
 
 	// If the poster is a registered user.
@@ -217,9 +153,6 @@ while ($cur_post = $db->fetch_assoc($result))
 
 		if ($pun_config['o_censoring'] == '1')
 			$user_title = censor_words($user_title);
-
-		// Format the online indicator
-		$is_online = ($cur_post['is_online'] == $cur_post['poster_id']) ? '<strong>'.$lang_topic['Online'].'</strong>' : $lang_topic['Offline'];
 
 		if ($pun_config['o_avatars'] == '1' && $cur_post['use_avatar'] == '1' && $pun_user['show_avatars'] != '0')
 		{
@@ -249,22 +182,8 @@ while ($cur_post = $db->fetch_assoc($result))
 			if ($pun_config['o_show_post_count'] == '1' || $pun_user['g_id'] < PUN_GUEST)
 				$user_info[] = '<dd>'.$lang_common['Posts'].': '.$cur_post['num_posts'];
 
-			// Now let's deal with the contact links (E-mail and URL)
-			if (($cur_post['email_setting'] == '0' && !$pun_user['is_guest']) || $pun_user['g_id'] < PUN_GUEST)
-				$user_contacts[] = '<a href="mailto:'.$cur_post['email'].'">'.$lang_common['E-mail'].'</a>';
-			else if ($cur_post['email_setting'] == '1' && !$pun_user['is_guest'])
-				$user_contacts[] = '<a href="misc.php?email='.$cur_post['poster_id'].'">'.$lang_common['E-mail'].'</a>';
-
 			if ($cur_post['url'] != '')
 				$user_contacts[] = '<a href="'.pun_htmlspecialchars($cur_post['url']).'">'.$lang_topic['Website'].'</a>';
-		}
-
-		if ($pun_user['g_id'] < PUN_GUEST)
-		{
-			$user_info[] = '<dd>IP: <a href="moderate.php?get_host='.$cur_post['id'].'">'.$cur_post['poster_ip'].'</a>';
-
-			if ($cur_post['admin_note'] != '')
-				$user_info[] = '<dd>'.$lang_topic['Note'].': <strong>'.pun_htmlspecialchars($cur_post['admin_note']).'</strong>';
 		}
 	}
 	// If the poster is a guest (or a user that has been deleted)
@@ -272,37 +191,7 @@ while ($cur_post = $db->fetch_assoc($result))
 	{
 		$username = pun_htmlspecialchars($cur_post['username']);
 		$user_title = get_title($cur_post);
-
-		if ($pun_user['g_id'] < PUN_GUEST)
-			$user_info[] = '<dd>IP: <a href="moderate.php?get_host='.$cur_post['id'].'">'.$cur_post['poster_ip'].'</a>';
-
-		if ($pun_config['o_show_user_info'] == '1' && $cur_post['poster_email'] != '' && !$pun_user['is_guest'])
-			$user_contacts[] = '<a href="mailto:'.$cur_post['poster_email'].'">'.$lang_common['E-mail'].'</a>';
 	}
-
-	// Generation post action array (quote, edit, delete etc.)
-	if (!$is_admmod)
-	{
-		if (!$pun_user['is_guest'])
-			$post_actions[] = '<li class="postreport"><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a>';
-
-		if ($cur_topic['closed'] == '0')
-		{
-			if ($cur_post['poster_id'] == $pun_user['id'])
-			{
-				if ((($start_from + $post_count) == 1 && $pun_user['g_delete_topics'] == '1') || (($start_from + $post_count) > 1 && $pun_user['g_delete_posts'] == '1'))
-					$post_actions[] = '<li class="postdelete"><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a>';
-				if ($pun_user['g_edit_posts'] == '1')
-					$post_actions[] = '<li class="postedit"><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a>';
-			}
-
-			if (($cur_topic['post_replies'] == '' && $pun_user['g_post_replies'] == '1') || $cur_topic['post_replies'] == '1')
-				$post_actions[] = '<li class="postquote"><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a>';
-		}
-	}
-	else
-		$post_actions[] = '<li class="postreport"><a href="misc.php?report='.$cur_post['id'].'">'.$lang_topic['Report'].'</a>'.$lang_topic['Link separator'].'</li><li class="postdelete"><a href="delete.php?id='.$cur_post['id'].'">'.$lang_topic['Delete'].'</a>'.$lang_topic['Link separator'].'</li><li class="postedit"><a href="edit.php?id='.$cur_post['id'].'">'.$lang_topic['Edit'].'</a>'.$lang_topic['Link separator'].'</li><li class="postquote"><a href="post.php?tid='.$id.'&amp;qid='.$cur_post['id'].'">'.$lang_topic['Quote'].'</a>';
-
 
 	// Switch the background color for every message.
 	$bg_switch = ($bg_switch) ? $bg_switch = false : $bg_switch = true;
@@ -347,8 +236,6 @@ while ($cur_post = $db->fetch_assoc($result))
 <?php if ($signature != '') echo "\t\t\t\t".'<div class="postsignature"><hr />'.$signature.'</div>'."\n"; ?>
 			</div>
 			<div class="clearer"></div>
-			<div class="postfootleft"><?php if ($cur_post['poster_id'] > 1) echo '<p>'.$is_online.'</p>'; ?></div>
-			<div class="postfootright"><?php echo (count($post_actions)) ? '<ul>'.implode($lang_topic['Link separator'].'</li>', $post_actions).'</li></ul></div>'."\n" : '<div>&nbsp;</div></div>'."\n" ?>
 		</div>
 	</div>
 </div>
@@ -363,44 +250,11 @@ while ($cur_post = $db->fetch_assoc($result))
 		<p class="postlink conr"><?php echo $post_link ?></p>
 		<p class="pagelink conl"><?php echo $paging_links ?></p>
 		<ul><li><a href="index.php"><?php echo $lang_common['Index'] ?></a></li><li>&nbsp;&raquo;&nbsp;<a href="viewforum.php?id=<?php echo $cur_topic['forum_id'] ?>"><?php echo pun_htmlspecialchars($cur_topic['forum_name']) ?></a></li><li>&nbsp;&raquo;&nbsp;<?php echo pun_htmlspecialchars($cur_topic['subject']) ?></li></ul>
-		<?php echo $subscraction ?>
+		<div class="clearer"></div>
 	</div>
 </div>
 
 <?php
-
-// Display quick post if enabled
-if ($quickpost)
-{
-
-?>
-<div class="blockform">
-	<h2><span><?php echo $lang_topic['Quick post'] ?></span></h2>
-	<div class="box">
-		<form method="post" action="post.php?tid=<?php echo $id ?>" onsubmit="this.submit.disabled=true;if(process_form(this)){return true;}else{this.submit.disabled=false;return false;}">
-			<div class="inform">
-				<fieldset>
-					<legend><?php echo $lang_common['Write message legend'] ?></legend>
-					<div class="infldset txtarea">
-						<input type="hidden" name="form_sent" value="1" />
-<?php if ($pun_config['o_subscriptions'] == '1' && $cur_topic['is_subscribed']) echo "\t\t\t\t\t\t".'<input type="hidden" name="subscribe" value="1" />'."\n"; ?>
-						<input type="hidden" name="form_user" value="<?php echo (!$pun_user['is_guest']) ? pun_htmlspecialchars($pun_user['username']) : 'Guest'; ?>" />
-						<label><textarea name="req_message" rows="7" cols="75" tabindex="1"></textarea></label>
-						<ul class="bblinks">
-							<li><a href="help.php#bbcode" onclick="window.open(this.href); return false;"><?php echo $lang_common['BBCode'] ?></a>: <?php echo ($pun_config['p_message_bbcode'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#img" onclick="window.open(this.href); return false;"><?php echo $lang_common['img tag'] ?></a>: <?php echo ($pun_config['p_message_img_tag'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-							<li><a href="help.php#smilies" onclick="window.open(this.href); return false;"><?php echo $lang_common['Smilies'] ?></a>: <?php echo ($pun_config['o_smilies'] == '1') ? $lang_common['on'] : $lang_common['off']; ?></li>
-						</ul>
-					</div>
-				</fieldset>
-			</div>
-			<p><input type="submit" name="submit" tabindex="2" value="<?php echo $lang_common['Submit'] ?>" accesskey="s" /></p>
-		</form>
-	</div>
-</div>
-<?php
-
-}
 
 $forum_id = $cur_topic['forum_id'];
 $footer_style = 'viewtopic';
