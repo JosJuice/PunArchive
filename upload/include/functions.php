@@ -37,10 +37,15 @@ function set_default_user()
 		exit('Unable to fetch guest information. The table \''.$db->prefix.'users\' must contain an entry with id = 1 that represents anonymous users.');
 
 	$pun_user = $db->fetch_assoc($result);
+	
+	// o_default_timezone doesn't exist in many databases, so we need a fallback
+	if (isset($pun_config['o_default_timezone']))
+		$pun_user['timezone'] = $pun_config['o_default_timezone'];
+	else
+		$pun_user['timezone'] = $pun_config['o_server_timezone'];
 
 	$pun_user['disp_topics'] = $pun_config['o_disp_topics_default'];
 	$pun_user['disp_posts'] = $pun_config['o_disp_posts_default'];
-	$pun_user['timezone'] = $pun_config['o_default_timezone'];
 	$pun_user['language'] = $pun_config['o_default_lang'];
 	$pun_user['style'] = $pun_config['o_default_style'];
 	$pun_user['is_guest'] = true;
