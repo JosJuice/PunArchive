@@ -100,7 +100,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 	// If a valid search_id was supplied we attempt to fetch the search results from the db
 	if (isset($search_id))
 	{
-		$ident = ($pun_user['is_guest']) ? get_remote_address() : $pun_user['username'];
+		$ident = get_remote_address();
 
 		$result = $db->query('SELECT search_data FROM '.$db->prefix.'search_cache WHERE id='.$search_id.' AND ident=\''.$db->escape($ident).'\'') or error('Unable to fetch search results', __FILE__, __LINE__, $db->error());
 		if ($row = $db->fetch_assoc($result))
@@ -324,14 +324,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 			// If it's a search for new posts
 			if ($action == 'show_new')
 			{
-				if ($pun_user['is_guest'])
-					message($lang_common['No permission']);
-
-				$result = $db->query('SELECT t.id FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1) AND t.last_post>'.$pun_user['last_visit'].' AND t.moved_to IS NULL') or error('Unable to fetch topic list', __FILE__, __LINE__, $db->error());
-				$num_hits = $db->num_rows($result);
-
-				if (!$num_hits)
-					message($lang_search['No new posts']);
+				message($lang_common['No permission']);
 			}
 			// If it's a search for todays posts
 			else if ($action == 'show_24h')
@@ -354,14 +347,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 			// If it's a search for subscribed topics
 			else if ($action == 'show_subscriptions')
 			{
-				if ($pun_user['is_guest'])
-					message($lang_common['Bad request']);
-
-				$result = $db->query('SELECT t.id FROM '.$db->prefix.'topics AS t INNER JOIN '.$db->prefix.'subscriptions AS s ON (t.id=s.topic_id AND s.user_id='.$pun_user['id'].') INNER JOIN '.$db->prefix.'forums AS f ON f.id=t.forum_id LEFT JOIN '.$db->prefix.'forum_perms AS fp ON (fp.forum_id=f.id AND fp.group_id='.$pun_user['g_id'].') WHERE (fp.read_forum IS NULL OR fp.read_forum=1)') or error('Unable to fetch topic list', __FILE__, __LINE__, $db->error());
-				$num_hits = $db->num_rows($result);
-
-				if (!$num_hits)
-					message($lang_search['No subscriptions']);
+				message($lang_common['Bad request']);
 			}
 			// If it's a search for unanswered posts
 			else
@@ -412,7 +398,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 		$temp = serialize($temp);
 		$search_id = mt_rand(1, 2147483647);
 
-		$ident = ($pun_user['is_guest']) ? get_remote_address() : $pun_user['username'];
+		$ident = get_remote_address();
 
 		$db->query('INSERT INTO '.$db->prefix.'search_cache (id, ident, search_data) VALUES('.$search_id.', \''.$db->escape($ident).'\', \''.$db->escape($temp).'\')') or error('Unable to insert search results', __FILE__, __LINE__, $db->error());
 
@@ -547,10 +533,6 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 				$icon = '<div class="icon"><div class="nosize">'.$lang_common['Normal icon'].'</div></div>'."\n";
 				$subject = '<a href="viewtopic.php?id='.$search_set[$i]['tid'].'">'.pun_htmlspecialchars($search_set[$i]['subject']).'</a>';
 
-				if (!$pun_user['is_guest'] && $search_set[$i]['last_post'] > $pun_user['last_visit'])
-					$icon = '<div class="icon inew"><div class="nosize">'.$lang_common['New icon'].'</div></div>'."\n";
-
-
 				if ($pun_config['o_censoring'] == '1')
 					$search_set[$i]['message'] = censor_words($search_set[$i]['message']);
 
@@ -612,16 +594,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 					$item_status = 'iclosed';
 				}
 
-				if (!$pun_user['is_guest'] && topic_is_new($search_set[$i]['tid'], $search_set[$i]['forum_id'],  $search_set[$i]['last_post']))
-				{
-					$icon_text .= ' '.$lang_common['New icon'];
-					$item_status .= ' inew';
-					$icon_type = 'icon inew';
-					$subject = '<strong>'.$subject.'</strong>';
-					$subject_new_posts = '<span class="newtext">[&nbsp;<a href="viewtopic.php?id='.$search_set[$i]['tid'].'&amp;action=new" title="'.$lang_common['New posts info'].'">'.$lang_common['New posts'].'</a>&nbsp;]</span>';
-				}
-				else
-					$subject_new_posts = null;
+				$subject_new_posts = null;
 
 				if ($search_set[$i]['sticky'] == '1')
 				{
@@ -633,16 +606,7 @@ if (isset($_GET['action']) || isset($_GET['search_id']))
 				$num_pages_topic = ceil(($search_set[$i]['num_replies'] + 1) / $pun_user['disp_posts']);
 
 				if ($num_pages_topic > 1)
-					$subject_multipage = '[ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$search_set[$i]['tid']).' ]';
-				else
-					$subject_multipage = null;
-
-				// Should we show the "New posts" and/or the multipage links?
-				if (!empty($subject_new_posts) || !empty($subject_multipage))
-				{
-					$subject .= '&nbsp; '.(!empty($subject_new_posts) ? $subject_new_posts : '');
-					$subject .= !empty($subject_multipage) ? ' '.$subject_multipage : '';
-				}
+					$subject .= '&nbsp;  [ '.paginate($num_pages_topic, -1, 'viewtopic.php?id='.$search_set[$i]['tid']).' ]';
 
 ?>
 				<tr<?php if ($item_status != '') echo ' class="'.trim($item_status).'"'; ?>>
